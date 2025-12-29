@@ -19,18 +19,56 @@ import { PlayerCardView } from './PlayerCard';
 import { toCSV, parseCSV } from '../utils/csv';
 import '../App.css'
 import { useNavigate, useParams } from 'react-router-dom';
-import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../amplify/data/resource';
-
-const client = generateClient<Schema>();
 
 export function TeamManager() {
   const navigate = useNavigate();
   const { teamId } = useParams();
+  const [teamName, setTeamName] = useState('Team Manager');
+  const [teamDescription, setTeamDescription] = useState('');
+  const [isEditingTeam, setIsEditingTeam] = useState(false);
+
+  useEffect(() => {
+    if (teamId) {
+      const storedTeams = localStorage.getItem('teams');
+      if (storedTeams) {
+        try {
+            const teams = JSON.parse(storedTeams);
+            const team = teams.find((t: any) => t.id === teamId);
+            if (team) {
+              setTeamName(team.name);
+              setTeamDescription(team.description || '');
+            }
+        } catch (e) {
+            console.error("Failed to load team name", e);
+        }
+      }
+    }
+  }, [teamId]);
+
+  const handleSaveTeamDetails = () => {
+    if (!teamId) return;
+    
+    const storedTeams = localStorage.getItem('teams');
+    if (storedTeams) {
+      const teams = JSON.parse(storedTeams);
+      const updatedTeams = teams.map((t: any) => {
+        if (t.id === teamId) {
+          return { ...t, name: teamName, description: teamDescription };
+        }
+        return t;
+      });
+      localStorage.setItem('teams', JSON.stringify(updatedTeams));
+      setIsEditingTeam(false);
+    }
+  };
 
   // Initialize state
   const [players, setPlayers] = useState<Player[]>(() => {
-    if (teamId) return []; // Load from cloud if teamId exists
+    if (teamId) {
+        const storedPlayers = localStorage.getItem(`players-${teamId}`);
+        if (storedPlayers) return JSON.parse(storedPlayers);
+        return [];
+    }
     
     // Legacy localStorage logic
     const globalPlayers = localStorage.getItem('players');
@@ -38,17 +76,6 @@ export function TeamManager() {
     
     return [];
   });
-
-  // Load from Cloud
-  useEffect(() => {
-    if (!teamId) return;
-    
-    client.models.Team.get({ id: teamId }).then(({ data: team }) => {
-        if (team && team.players) {
-            setPlayers(team.players as unknown as Player[]);
-        }
-    });
-  }, [teamId]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -70,13 +97,7 @@ export function TeamManager() {
   // Save to storage whenever state changes
   useEffect(() => {
     if (teamId) {
-        const timeout = setTimeout(() => {
-            client.models.Team.update({
-                id: teamId,
-                players: players as unknown as any
-            });
-        }, 1000);
-        return () => clearTimeout(timeout);
+        localStorage.setItem(`players-${teamId}`, JSON.stringify(players));
     } else {
         localStorage.setItem('players', JSON.stringify(players));
     }
@@ -250,7 +271,35 @@ export function TeamManager() {
         <header className="app-header">
             <div className="logo-section" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
                 <img src="/fav.svg" alt="Logo" className="app-logo" />
-                <h1>Team Manager</h1>
+                {isEditingTeam ? (
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                    <input 
+                      value={teamName} 
+                      onChange={e => setTeamName(e.target.value)} 
+                      placeholder="Team Name"
+                      style={{ fontSize: '1.5rem', padding: '5px' }}
+                    />
+                    <input 
+                      value={teamDescription} 
+                      onChange={e => setTeamDescription(e.target.value)} 
+                      placeholder="Description"
+                      style={{ padding: '5px' }}
+                    />
+                    <button onClick={handleSaveTeamDetails} style={{ backgroundColor: '#4caf50' }}>Save</button>
+                    <button onClick={() => setIsEditingTeam(false)} style={{ backgroundColor: '#9e9e9e' }}>Cancel</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h1>{teamName}</h1>
+                    {teamDescription && <span style={{ fontSize: '1rem', color: '#666', fontWeight: 'normal' }}>{teamDescription}</span>}
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsEditingTeam(true); }}
+                      style={{ padding: '4px 8px', fontSize: '0.8rem', backgroundColor: 'transparent', color: '#666', border: '1px solid #ccc' }}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
             </div>
             <div className="header-actions">
                 <input 
