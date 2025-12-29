@@ -76,13 +76,17 @@
 .team-sheet-wrapper {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 10px; /* Reduced padding for mobile */
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .main-content {
     flex-direction: column;
+  }
+
+  .team-sheet-wrapper {
+    padding: 10px;
   }
 
   .app-header {
