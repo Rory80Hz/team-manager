@@ -5,6 +5,7 @@ import { PitchPosition } from './PitchPosition';
 import './TeamSheet.css';
 
 interface Props {
+  teamName: string;
   positions: Position[];
   players: Player[];
   onRemovePlayer: (positionId: string) => void;
@@ -30,7 +31,7 @@ const PITCH_COORDINATES: Record<string, { top: string; left: string }> = {
   '15': { top: '85%', left: '50%' },
 };
 
-export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ positions, players, onRemovePlayer, onToggleDisabled }, ref) => {
+export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ teamName, positions, players, onRemovePlayer, onToggleDisabled }, ref) => {
   const getPlayer = (playerId: string | null) => {
     if (!playerId) return null;
     return players.find(p => p.id === playerId) || null;
@@ -41,7 +42,7 @@ export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ positions, players
 
   return (
     <div className="team-sheet-container" ref={ref}>
-      <h2>Team Sheet</h2>
+      <h2>Team Sheet - {teamName}</h2>
       
       {/* Pitch View */}
       <div className="pitch-container">

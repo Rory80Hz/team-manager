@@ -67,11 +67,18 @@ export function TeamManager() {
   };
 
   const handleTogglePositionDisabled = (positionId: string) => {
-    const newDisabledIds = disabledPositionIds.includes(positionId)
-      ? disabledPositionIds.filter(id => id !== positionId)
-      : [...disabledPositionIds, positionId];
+    const isDisabling = !disabledPositionIds.includes(positionId);
+    const newDisabledIds = isDisabling
+      ? [...disabledPositionIds, positionId]
+      : disabledPositionIds.filter(id => id !== positionId);
     
     setDisabledPositionIds(newDisabledIds);
+
+    if (isDisabling) {
+      setPlayers(prevPlayers => prevPlayers.map(p => 
+        p.positionId === positionId ? { ...p, positionId: null } : p
+      ));
+    }
 
     // Save to local storage immediately
     if (teamId) {
@@ -364,6 +371,7 @@ export function TeamManager() {
           <div className="team-sheet-wrapper">
             <TeamSheet 
               ref={teamSheetRef}
+              teamName={teamName}
               positions={positions} 
               players={players} 
               onRemovePlayer={handleRemovePlayerFromPosition}
