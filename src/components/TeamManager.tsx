@@ -11,7 +11,7 @@ import {
   TouchSensor
 } from '@dnd-kit/core';
 import html2canvas from 'html2canvas';
-import type { Player, Position } from '../types';
+import type { Player } from '../types';
 import { INITIAL_POSITIONS } from '../constants';
 import { PlayerList } from './PlayerList';
 import { TeamSheet } from './TeamSheet';
