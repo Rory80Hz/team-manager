@@ -6,9 +6,11 @@ import './PlayerList.css';
 interface Props {
   players: Player[];
   onAddPlayer: (name: string) => void;
+  onDeletePlayer: (id: string) => void;
+  onUpdatePlayerName: (id: string, name: string) => void;
 }
 
-export const PlayerList: React.FC<Props> = ({ players, onAddPlayer }) => {
+export const PlayerList: React.FC<Props> = ({ players, onAddPlayer, onDeletePlayer, onUpdatePlayerName }) => {
   const [newPlayerName, setNewPlayerName] = useState('');
 
   const handleAdd = () => {
@@ -39,7 +41,12 @@ export const PlayerList: React.FC<Props> = ({ players, onAddPlayer }) => {
           </div>
         ) : (
           players.map(player => (
-            <PlayerCard key={player.id} player={player} />
+            <PlayerCard 
+              key={player.id} 
+              player={player} 
+              onDelete={() => onDeletePlayer(player.id)}
+              onUpdateName={(name) => onUpdatePlayerName(player.id, name)}
+            />
           ))
         )}
       </div>

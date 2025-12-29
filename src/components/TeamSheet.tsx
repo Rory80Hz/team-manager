@@ -1,4 +1,4 @@
-import React from 'react';
+import { forwardRef } from 'react';
 import type { Position, Player } from '../types';
 import { PositionSlot } from './PositionSlot';
 import { PitchPosition } from './PitchPosition';
@@ -29,7 +29,7 @@ const PITCH_COORDINATES: Record<string, { top: string; left: string }> = {
   '15': { top: '85%', left: '50%' },
 };
 
-export const TeamSheet: React.FC<Props> = ({ positions, players, onRemovePlayer }) => {
+export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ positions, players, onRemovePlayer }, ref) => {
   const getPlayer = (playerId: string | null) => {
     if (!playerId) return null;
     return players.find(p => p.id === playerId) || null;
@@ -39,7 +39,7 @@ export const TeamSheet: React.FC<Props> = ({ positions, players, onRemovePlayer 
   const substitutes = positions.filter(p => parseInt(p.id) > 15);
 
   return (
-    <div className="team-sheet-container">
+    <div className="team-sheet-container" ref={ref}>
       <h2>Team Sheet</h2>
       
       {/* Pitch View */}
@@ -78,5 +78,5 @@ export const TeamSheet: React.FC<Props> = ({ positions, players, onRemovePlayer 
       </div>
     </div>
   );
-};
+});
 
