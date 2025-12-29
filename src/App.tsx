@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid';
-import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent } from '@dnd-kit/core';
+import { 
+  DndContext, 
+  type DragEndEvent, 
+  DragOverlay, 
+  type DragStartEvent,
+  useSensor,
+  useSensors,
+  MouseSensor,
+  TouchSensor
+} from '@dnd-kit/core';
 import html2canvas from 'html2canvas';
 import type { Player, Position } from './types';
 import { INITIAL_POSITIONS } from './constants';
@@ -46,6 +55,21 @@ function App() {
   });
 
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 10, // Enable click events
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Delay to prevent accidental drags while scrolling
+        tolerance: 5,
+      },
+    })
+  );
 
   // Save to storage whenever state changes
   useEffect(() => {
@@ -211,7 +235,11 @@ function App() {
   const activePlayer = activeId ? players.find(p => p.id === activeId) : null;
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext 
+      sensors={sensors}
+      onDragStart={handleDragStart} 
+      onDragEnd={handleDragEnd}
+    >
       <div className="app-container">
         <header className="app-header">
             <div className="logo-section">

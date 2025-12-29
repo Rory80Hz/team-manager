@@ -93,11 +93,13 @@
 
   .header-actions {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   
   .header-actions button {
-    flex: 1;
+    flex: auto;
     font-size: 0.8rem;
     padding: 0.5em;
   }
