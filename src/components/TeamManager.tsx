@@ -1,0 +1,388 @@
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { v4 as uuidv4 } from 'uuid';
+import { 
+  DndContext, 
+  type DragEndEvent, 
+  DragOverlay, 
+  type DragStartEvent,
+  useSensor,
+  useSensors,
+  MouseSensor,
+  TouchSensor
+} from '@dnd-kit/core';
+import html2canvas from 'html2canvas';
+import type { Player } from '../types';
+import { INITIAL_POSITIONS } from '../constants';
+import { PlayerList } from './PlayerList';
+import { TeamSheet } from './TeamSheet';
+import { PlayerCardView } from './PlayerCard';
+import { toCSV, parseCSV } from '../utils/csv';
+import '../App.css'
+import { useNavigate, useParams } from 'react-router-dom';
+
+export function TeamManager() {
+  const navigate = useNavigate();
+  const { teamId } = useParams();
+  const [teamName, setTeamName] = useState('Team Manager');
+  const [teamDescription, setTeamDescription] = useState('');
+  const [isEditingTeam, setIsEditingTeam] = useState(false);
+  const [disabledPositionIds, setDisabledPositionIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (teamId) {
+      const storedTeams = localStorage.getItem('teams');
+      if (storedTeams) {
+        try {
+            const teams = JSON.parse(storedTeams);
+            const team = teams.find((t: any) => t.id === teamId);
+            if (team) {
+              setTeamName(team.name);
+              setTeamDescription(team.description || '');
+              if (team.disabledPositionIds) {
+                setDisabledPositionIds(team.disabledPositionIds);
+              }
+            }
+        } catch (e) {
+            console.error("Failed to load team name", e);
+        }
+      }
+    }
+  }, [teamId]);
+
+  const handleSaveTeamDetails = () => {
+    if (!teamId) return;
+    
+    const storedTeams = localStorage.getItem('teams');
+    if (storedTeams) {
+      const teams = JSON.parse(storedTeams);
+      const updatedTeams = teams.map((t: any) => {
+        if (t.id === teamId) {
+          return { ...t, name: teamName, description: teamDescription };
+        }
+        return t;
+      });
+      localStorage.setItem('teams', JSON.stringify(updatedTeams));
+      setIsEditingTeam(false);
+    }
+  };
+
+  const handleTogglePositionDisabled = (positionId: string) => {
+    const isDisabling = !disabledPositionIds.includes(positionId);
+    const newDisabledIds = isDisabling
+      ? [...disabledPositionIds, positionId]
+      : disabledPositionIds.filter(id => id !== positionId);
+    
+    setDisabledPositionIds(newDisabledIds);
+
+    if (isDisabling) {
+      setPlayers(prevPlayers => prevPlayers.map(p => 
+        p.positionId === positionId ? { ...p, positionId: null } : p
+      ));
+    }
+
+    // Save to local storage immediately
+    if (teamId) {
+        const storedTeams = localStorage.getItem('teams');
+        if (storedTeams) {
+            const teams = JSON.parse(storedTeams);
+            const updatedTeams = teams.map((t: any) => {
+                if (t.id === teamId) {
+                    return { ...t, disabledPositionIds: newDisabledIds };
+                }
+                return t;
+            });
+            localStorage.setItem('teams', JSON.stringify(updatedTeams));
+        }
+    }
+  };
+
+  // Initialize state
+  const [players, setPlayers] = useState<Player[]>(() => {
+    if (teamId) {
+        const storedPlayers = localStorage.getItem(`players-${teamId}`);
+        if (storedPlayers) return JSON.parse(storedPlayers);
+        return [];
+    }
+    
+    // Legacy localStorage logic
+    const globalPlayers = localStorage.getItem('players');
+    if (globalPlayers) return JSON.parse(globalPlayers);
+    
+    return [];
+  });
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 10, // Enable click events
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Delay to prevent accidental drags while scrolling
+        tolerance: 5,
+      },
+    })
+  );
+
+  // Save to storage whenever state changes
+  useEffect(() => {
+    if (teamId) {
+        localStorage.setItem(`players-${teamId}`, JSON.stringify(players));
+    } else {
+        localStorage.setItem('players', JSON.stringify(players));
+    }
+  }, [players, teamId]);
+
+  // Derive positions from players state and INITIAL_POSITIONS constant
+  const positions = useMemo(() => {
+    return INITIAL_POSITIONS.map(pos => {
+      const player = players.find(p => p.positionId === pos.id);
+      return {
+        ...pos,
+        playerId: player ? player.id : null,
+        disabled: disabledPositionIds.includes(pos.id)
+      };
+    });
+  }, [players, disabledPositionIds]);
+
+  const handleAddPlayer = (name: string) => {
+    const newPlayer: Player = {
+      id: uuidv4(),
+      name,
+      positionId: null
+    };
+    setPlayers([...players, newPlayer]);
+  };
+
+  const handleDeletePlayer = (playerId: string) => {
+    if (confirm('Are you sure you want to delete this player?')) {
+      setPlayers(prevPlayers => prevPlayers.filter(p => p.id !== playerId));
+    }
+  };
+
+  const handleUpdatePlayerName = (id: string, newName: string) => {
+    setPlayers(prevPlayers => prevPlayers.map(p => 
+      p.id === id ? { ...p, name: newName } : p
+    ));
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (over && active) {
+      const playerId = active.id as string;
+      const targetPositionId = over.id as string;
+
+      if (disabledPositionIds.includes(targetPositionId)) return;
+
+      setPlayers(prevPlayers => {
+        return prevPlayers.map(p => {
+          // If this is the player being dragged
+          if (p.id === playerId) {
+            return { ...p, positionId: targetPositionId };
+          }
+          
+          // If another player is ALREADY in targetPositionId, we need to unassign them.
+          if (p.positionId === targetPositionId && p.id !== playerId) {
+            return { ...p, positionId: null };
+          }
+          
+          return p;
+        });
+      });
+    }
+  };
+
+  const handleRemovePlayerFromPosition = (positionId: string) => {
+    setPlayers(prevPlayers => {
+      return prevPlayers.map(p => {
+        if (p.positionId === positionId) {
+          return { ...p, positionId: null };
+        }
+        return p;
+      });
+    });
+  };
+
+  const availablePlayers = players.filter(p => !p.positionId);
+
+  const downloadCSV = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportData = () => {
+    // Export all players with their position (if any)
+    const data = players.map(p => ({
+      id: p.id,
+      name: p.name,
+      positionId: p.positionId || ''
+    }));
+    const csv = toCSV(data, ['id', 'name', 'positionId']);
+    downloadCSV(csv, 'team_data.csv');
+  };
+
+  const teamSheetRef = useRef<HTMLDivElement>(null);
+
+  const handleExportImage = async () => {
+    if (teamSheetRef.current) {
+      try {
+        const canvas = await html2canvas(teamSheetRef.current, {
+          useCORS: true, // In case we have external images (like the logo if it was external)
+          scale: 2, // Better quality
+          backgroundColor: '#ffffff', // Ensure white background
+        });
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'team-sheet.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('Failed to export image:', error);
+        alert('Failed to export image. See console for details.');
+      }
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const data = parseCSV(text);
+      
+      // Expected format: id, name, positionId
+      const newPlayers: Player[] = data.map((row: any) => ({
+        id: row.id || uuidv4(),
+        name: row.name,
+        positionId: row.positionId || null
+      })).filter(p => p.name);
+      
+      setPlayers(prev => {
+        const playerMap = new Map(prev.map(p => [p.id, p]));
+        newPlayers.forEach(p => playerMap.set(p.id, p));
+        return Array.from(playerMap.values());
+      });
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
+  const resetTeam = () => {
+    if (confirm('Are you sure you want to reset the team? All players will be moved back to the available list.')) {
+      setPlayers(prev => prev.map(p => ({ ...p, positionId: null })));
+    }
+  };
+
+  const activePlayer = activeId ? players.find(p => p.id === activeId) : null;
+
+  return (
+    <DndContext 
+      sensors={sensors}
+      onDragStart={handleDragStart} 
+      onDragEnd={handleDragEnd}
+    >
+      <div className="app-container">
+        <header className="app-header">
+            <div className="logo-section" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+                <img src="/fav.svg" alt="Logo" className="app-logo" />
+                {isEditingTeam ? (
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                    <input 
+                      value={teamName} 
+                      onChange={e => setTeamName(e.target.value)} 
+                      placeholder="Team Name"
+                      style={{ fontSize: '1.5rem', padding: '5px' }}
+                    />
+                    <input 
+                      value={teamDescription} 
+                      onChange={e => setTeamDescription(e.target.value)} 
+                      placeholder="Description"
+                      style={{ padding: '5px' }}
+                    />
+                    <button onClick={handleSaveTeamDetails} style={{ backgroundColor: '#4caf50' }}>Save</button>
+                    <button onClick={() => setIsEditingTeam(false)} style={{ backgroundColor: '#9e9e9e' }}>Cancel</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h1>{teamName}</h1>
+                    {teamDescription && <span style={{ fontSize: '1rem', color: '#666', fontWeight: 'normal' }}>{teamDescription}</span>}
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsEditingTeam(true); }}
+                      style={{ padding: '4px 8px', fontSize: '0.8rem', backgroundColor: 'transparent', color: '#666', border: '1px solid #ccc' }}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
+            </div>
+            <div className="header-actions">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  accept=".csv" 
+                  onChange={handleImportData} 
+                />
+                
+                <div className="button-group">
+                  <button onClick={() => fileInputRef.current?.click()}>Import Data</button>
+                  <button onClick={exportData}>Export Data</button>
+                  <button onClick={handleExportImage}>Export Image</button>
+                </div>
+
+                <button onClick={resetTeam} style={{ backgroundColor: '#ff9800' }}>Reset Team</button>
+                <button onClick={() => {
+                    if(confirm('Are you sure you want to clear all data? This will delete all players.')) {
+                        setPlayers([]);
+                    }
+                }} className="danger-button">Clear Data</button>
+            </div>
+        </header>
+        <div className="main-content">
+          <PlayerList 
+            players={availablePlayers} 
+            onAddPlayer={handleAddPlayer} 
+            onDeletePlayer={handleDeletePlayer}
+            onUpdatePlayerName={handleUpdatePlayerName}
+          />
+          <div className="team-sheet-wrapper">
+            <TeamSheet 
+              ref={teamSheetRef}
+              teamName={teamName}
+              positions={positions} 
+              players={players} 
+              onRemovePlayer={handleRemovePlayerFromPosition}
+              onToggleDisabled={handleTogglePositionDisabled}
+            />
+          </div>
+        </div>
+      </div>
+      <DragOverlay>
+        {activePlayer ? <PlayerCardView player={activePlayer} isOverlay /> : null}
+      </DragOverlay>
+    </DndContext>
+  )
+}

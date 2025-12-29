@@ -8,6 +8,7 @@ export interface Position {
   id: string;
   name: string;
   playerId: string | null; // ID of the player assigned to this position
+  disabled?: boolean;
 }
 
 export interface TeamState {

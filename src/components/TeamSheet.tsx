@@ -5,9 +5,11 @@ import { PitchPosition } from './PitchPosition';
 import './TeamSheet.css';
 
 interface Props {
+  teamName: string;
   positions: Position[];
   players: Player[];
   onRemovePlayer: (positionId: string) => void;
+  onToggleDisabled: (positionId: string) => void;
 }
 
 // Coordinates for positions 1-15 (percentage from top, percentage from left)
@@ -29,7 +31,7 @@ const PITCH_COORDINATES: Record<string, { top: string; left: string }> = {
   '15': { top: '85%', left: '50%' },
 };
 
-export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ positions, players, onRemovePlayer }, ref) => {
+export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ teamName, positions, players, onRemovePlayer, onToggleDisabled }, ref) => {
   const getPlayer = (playerId: string | null) => {
     if (!playerId) return null;
     return players.find(p => p.id === playerId) || null;
@@ -40,7 +42,7 @@ export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ positions, players
 
   return (
     <div className="team-sheet-container" ref={ref}>
-      <h2>Team Sheet</h2>
+      <h2>Team Sheet - {teamName}</h2>
       
       {/* Pitch View */}
       <div className="pitch-container">
@@ -60,6 +62,7 @@ export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ positions, players
             player={getPlayer(position.playerId)}
             style={PITCH_COORDINATES[position.id]}
             onRemove={() => onRemovePlayer(position.id)}
+            onToggleDisabled={() => onToggleDisabled(position.id)}
           />
         ))}
       </div>
@@ -73,6 +76,7 @@ export const TeamSheet = forwardRef<HTMLDivElement, Props>(({ positions, players
             position={position}
             player={getPlayer(position.playerId)}
             onRemove={() => onRemovePlayer(position.id)}
+            onToggleDisabled={() => onToggleDisabled(position.id)}
           />
         ))}
       </div>
