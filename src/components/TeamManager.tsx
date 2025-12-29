@@ -26,6 +26,7 @@ export function TeamManager() {
   const [teamName, setTeamName] = useState('Team Manager');
   const [teamDescription, setTeamDescription] = useState('');
   const [isEditingTeam, setIsEditingTeam] = useState(false);
+  const [disabledPositionIds, setDisabledPositionIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (teamId) {
@@ -37,6 +38,9 @@ export function TeamManager() {
             if (team) {
               setTeamName(team.name);
               setTeamDescription(team.description || '');
+              if (team.disabledPositionIds) {
+                setDisabledPositionIds(team.disabledPositionIds);
+              }
             }
         } catch (e) {
             console.error("Failed to load team name", e);
@@ -59,6 +63,29 @@ export function TeamManager() {
       });
       localStorage.setItem('teams', JSON.stringify(updatedTeams));
       setIsEditingTeam(false);
+    }
+  };
+
+  const handleTogglePositionDisabled = (positionId: string) => {
+    const newDisabledIds = disabledPositionIds.includes(positionId)
+      ? disabledPositionIds.filter(id => id !== positionId)
+      : [...disabledPositionIds, positionId];
+    
+    setDisabledPositionIds(newDisabledIds);
+
+    // Save to local storage immediately
+    if (teamId) {
+        const storedTeams = localStorage.getItem('teams');
+        if (storedTeams) {
+            const teams = JSON.parse(storedTeams);
+            const updatedTeams = teams.map((t: any) => {
+                if (t.id === teamId) {
+                    return { ...t, disabledPositionIds: newDisabledIds };
+                }
+                return t;
+            });
+            localStorage.setItem('teams', JSON.stringify(updatedTeams));
+        }
     }
   };
 
@@ -109,10 +136,11 @@ export function TeamManager() {
       const player = players.find(p => p.positionId === pos.id);
       return {
         ...pos,
-        playerId: player ? player.id : null
+        playerId: player ? player.id : null,
+        disabled: disabledPositionIds.includes(pos.id)
       };
     });
-  }, [players]);
+  }, [players, disabledPositionIds]);
 
   const handleAddPlayer = (name: string) => {
     const newPlayer: Player = {
@@ -146,6 +174,8 @@ export function TeamManager() {
     if (over && active) {
       const playerId = active.id as string;
       const targetPositionId = over.id as string;
+
+      if (disabledPositionIds.includes(targetPositionId)) return;
 
       setPlayers(prevPlayers => {
         return prevPlayers.map(p => {
@@ -337,6 +367,7 @@ export function TeamManager() {
               positions={positions} 
               players={players} 
               onRemovePlayer={handleRemovePlayerFromPosition}
+              onToggleDisabled={handleTogglePositionDisabled}
             />
           </div>
         </div>
