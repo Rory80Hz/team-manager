@@ -1,0 +1,80 @@
+.player-list-container {
+  width: 300px;
+  padding: 20px;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #fff;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+  z-index: 10;
+}
+
+.player-list-header {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.player-input-section {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.player-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.player-input:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+}
+
+.add-player-btn {
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+
+.player-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px;
+  /* Custom scrollbar styling for webkit browsers */
+}
+
+.player-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.player-scroll-area::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.player-scroll-area::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.player-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .player-list-container {
+    width: 100%;
+    height: 300px; /* Limit height on mobile so team sheet is visible */
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+}

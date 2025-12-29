@@ -1,0 +1,210 @@
+.team-sheet-container {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.pitch-container {
+  position: relative;
+  width: 100%;
+  /* Aspect ratio for a rugby pitch (approx 100m x 70m -> 1.43) */
+  aspect-ratio: 100 / 70; 
+  max-height: 80vh;
+  background-color: #4a9c59;
+  /* Grass pattern */
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 50px,
+    rgba(0, 0, 0, 0.05) 50px,
+    rgba(0, 0, 0, 0.05) 100px
+  );
+  border: 4px solid white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Pitch Markings */
+.pitch-line {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.pitch-line.halfway {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.pitch-line.try-line-top {
+  top: 10%; /* In-goal area is usually 10-22m, scaling it down for visual */
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.pitch-line.try-line-bottom {
+  bottom: 10%;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.pitch-line.ten-meter-top {
+  top: 40%; /* 10m from halfway */
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-top: 2px dashed rgba(255, 255, 255, 0.5);
+  background-color: transparent;
+}
+
+.pitch-line.ten-meter-bottom {
+  bottom: 40%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-top: 2px dashed rgba(255, 255, 255, 0.5);
+  background-color: transparent;
+}
+
+.pitch-line.twenty-two-top {
+  top: 22%; /* 22m line */
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.pitch-line.twenty-two-bottom {
+  bottom: 22%;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+/* Player Position on Pitch */
+.pitch-position {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 10%; /* Reduced from 12% */
+  min-width: 65px; /* Reduced from 80px */
+  max-width: 110px; /* Reduced from 140px */
+  aspect-ratio: 3/2;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #333; /* Thinner border */
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  font-size: 0.7rem; /* Smaller font */
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pitch-position.is-over {
+  background-color: #e0ffe0;
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border-color: #2e8b57;
+  z-index: 20;
+}
+
+.pitch-position-number {
+  font-weight: bold;
+  font-size: 0.9em;
+  margin-bottom: 1px;
+  color: #444;
+  line-height: 1;
+}
+
+.pitch-position-name {
+  font-size: 0.65em;
+  color: #666;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.pitch-player-name {
+  font-weight: bold;
+  color: #000;
+  background-color: #e6f3ff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85em;
+  line-height: 1.2;
+  position: relative;
+  padding-right: 18px; /* Make room for the x button */
+}
+
+.remove-player-btn {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: none;
+}
+
+.remove-player-btn:hover {
+  background-color: rgba(255, 0, 0, 0.1);
+  color: #ff0000;
+}
+
+.pitch-empty {
+  color: #999;
+  font-style: italic;
+  font-size: 0.8em;
+}
+
+/* Substitutes Section */
+.substitutes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pitch-position {
+    width: 18%;
+    min-width: 60px;
+    font-size: 0.7rem;
+  }
+  
+  .pitch-position-name {
+    display: none; /* Hide position name on small screens to save space */
+  }
+}

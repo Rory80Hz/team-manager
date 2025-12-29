@@ -1,0 +1,84 @@
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-header {
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  z-index: 100;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.danger-button {
+  background-color: #fff0f0;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.danger-button:hover {
+  background-color: #ffebee;
+  border-color: #ef9a9a;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background-color: #f9f9f9;
+}
+
+.team-sheet-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .app-header {
+    flex-direction: column;
+    gap: 10px;
+    padding: 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .header-actions button {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 0.5em;
+  }
+}
